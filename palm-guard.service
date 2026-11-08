@@ -3,14 +3,15 @@ Description=Disable the built-in trackpad briefly while typing on the built-in k
 After=systemd-udev-settle.service
 
 [Service]
-ExecStart=/usr/local/bin/palm-guard
+# Bare name: systemd finds it in /usr/local/bin (install.sh) or /usr/bin (AUR package).
+ExecStart=palm-guard
 # Seconds to keep the trackpad off after the last keypress.
 Environment=PALM_GUARD_HOLD=0.5
 # For hardware other than Apple Silicon MacBooks, set these from `palm-guard --list`:
 #Environment="PALM_GUARD_KEYBOARD=Apple MTP keyboard"
 #Environment="PALM_GUARD_TRACKPAD=Apple MTP multi-touch"
 # Never leave the trackpad dead if the guard stops or crashes.
-ExecStopPost=-/usr/local/bin/palm-guard --release
+ExecStopPost=-palm-guard --release
 Restart=on-failure
 RestartSec=2
 

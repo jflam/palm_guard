@@ -36,14 +36,24 @@ switches it back on 0.5 s after your last key.
 
 ## Install
 
+From the [AUR](https://aur.archlinux.org/packages/palm-guard-git):
+
+```bash
+yay -S palm-guard-git
+sudo systemctl enable --now palm-guard
+```
+
+Or from a clone, without a package manager:
+
 ```bash
 git clone https://github.com/jflam/palm_guard.git
 cd palm_guard
 ./install.sh
 ```
 
-This installs `/usr/local/bin/palm-guard` and a systemd service that starts
-at boot. It needs root because it reads `/dev/input` and writes to sysfs.
+`install.sh` puts `palm-guard` in `/usr/local/bin` and enables a systemd
+service that starts at boot. palm-guard runs as root because it reads
+`/dev/input` and writes to sysfs.
 
 To check it's working, find the trackpad's event number with
 `palm-guard --list` (on Apple Silicon it's usually `event0`), then run this
@@ -54,15 +64,14 @@ and go back to `0` afterwards:
 watch -n 0.1 cat /sys/class/input/event0/device/inhibited
 ```
 
-Uninstall:
-
-```bash
-./install.sh --uninstall
-```
+Uninstall with `yay -R palm-guard-git`, or `./install.sh --uninstall` if you
+installed from a clone.
 
 ## Configuration
 
-Set these in `palm-guard.service`, then re-run `./install.sh`:
+Override these with `sudo systemctl edit palm-guard`, adding lines such as
+`Environment=PALM_GUARD_HOLD=0.3` under `[Service]`, then
+`sudo systemctl restart palm-guard`:
 
 | Variable | Default | Meaning |
 |---|---|---|
