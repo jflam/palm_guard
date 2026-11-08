@@ -36,8 +36,7 @@ switches it back on 0.5 s after your last key.
 
 ## Install
 
-As an Arch package, built from the PKGBUILD in this repo (an AUR listing,
-`palm-guard-git`, is coming once AUR registration reopens):
+As an Arch package, built from the PKGBUILD in this repo:
 
 ```bash
 git clone https://github.com/jflam/palm_guard.git
@@ -45,6 +44,15 @@ cd palm_guard/aur
 makepkg -si
 sudo systemctl enable --now palm-guard
 ```
+
+> **Why not `yay -S palm-guard-git`?** palm-guard is meant to live on the
+> [AUR](https://aur.archlinux.org/) as `palm-guard-git`, but as of November
+> 2026 the AUR has paused new account registration while it deals with a wave
+> of automated sign-ups, so the package can't be published yet. The PKGBUILD in
+> [`aur/`](aur/) is the same one that will go up there, so `makepkg -si`
+> gives you the identical package, and pacman tracks and removes it the
+> same way. Once registration reopens, the package will be published and
+> this section will switch to `yay -S palm-guard-git`.
 
 Or from a clone, without a package manager:
 
