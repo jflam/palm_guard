@@ -1,1 +1,5 @@
 __pycache__/
+aur/src/
+aur/pkg/
+aur/palm_guard/
+aur/*.pkg.tar.*

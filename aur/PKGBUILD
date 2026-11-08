@@ -1,0 +1,29 @@
+# Maintainer: John Lam <jlam at iunknown dot com>
+pkgname=palm-guard-git
+_pkgname=palm_guard
+pkgver=r2.b1e1894
+pkgrel=1
+pkgdesc="Disable the built-in trackpad briefly while typing (palm rejection for Apple Silicon MacBooks on Asahi Linux)"
+arch=('any')
+url="https://github.com/jflam/palm_guard"
+license=('MIT')
+depends=('python' 'systemd')
+makedepends=('git')
+provides=('palm-guard')
+conflicts=('palm-guard')
+install=palm-guard.install
+source=("git+https://github.com/jflam/palm_guard.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$_pkgname"
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+package() {
+  cd "$_pkgname"
+  install -Dm755 palm-guard "$pkgdir/usr/bin/palm-guard"
+  install -Dm644 palm-guard.service "$pkgdir/usr/lib/systemd/system/palm-guard.service"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

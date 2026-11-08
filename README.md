@@ -36,10 +36,13 @@ switches it back on 0.5 s after your last key.
 
 ## Install
 
-From the [AUR](https://aur.archlinux.org/packages/palm-guard-git):
+As an Arch package, built from the PKGBUILD in this repo (an AUR listing,
+`palm-guard-git`, is coming once AUR registration reopens):
 
 ```bash
-yay -S palm-guard-git
+git clone https://github.com/jflam/palm_guard.git
+cd palm_guard/aur
+makepkg -si
 sudo systemctl enable --now palm-guard
 ```
 
@@ -64,7 +67,7 @@ and go back to `0` afterwards:
 watch -n 0.1 cat /sys/class/input/event0/device/inhibited
 ```
 
-Uninstall with `yay -R palm-guard-git`, or `./install.sh --uninstall` if you
+Uninstall with `sudo pacman -R palm-guard-git`, or `./install.sh --uninstall` if you
 installed from a clone.
 
 ## Configuration

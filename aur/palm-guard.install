@@ -1,0 +1,16 @@
+post_install() {
+  echo ":: Start palm-guard now and at every boot with:"
+  echo "     sudo systemctl enable --now palm-guard"
+  echo ":: Not on an Apple Silicon MacBook? See 'palm-guard --list' and"
+  echo "   /usr/share/doc/palm-guard-git/README.md to set your device names."
+}
+
+post_upgrade() {
+  if systemctl is-active --quiet palm-guard; then
+    systemctl restart palm-guard
+  fi
+}
+
+pre_remove() {
+  systemctl disable --now palm-guard 2>/dev/null || true
+}
