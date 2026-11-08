@@ -1,0 +1,96 @@
+#!/usr/bin/python3 -I
+"""palm-guard: inhibit the built-in trackpad briefly after each keypress on the
+built-in keyboard.
+
+Stronger than libinput's disable-while-typing: libinput only ignores touches
+that *start* while you type, while palm-guard also cuts off a palm that was
+already resting on the pad. Only the internal keyboard counts, so typing on an
+external keyboard never disables the trackpad. Modifier keys are ignored (and
+re-enable the pad at once) so Cmd/Ctrl/Shift+click keep working.
+
+Runs as root: it reads /dev/input and writes the kernel's sysfs `inhibited`
+switch. No dependencies beyond the Python standard library.
+
+Usage:
+  palm-guard            run the guard
+  palm-guard --list     print input device names (to configure other hardware)
+  palm-guard --release  make sure the trackpad is enabled, then exit
+
+Environment:
+  PALM_GUARD_KEYBOARD   keyboard device name  (default: "Apple MTP keyboard")
+  PALM_GUARD_TRACKPAD   trackpad device name  (default: "Apple MTP multi-touch")
+  PALM_GUARD_HOLD       seconds to keep the trackpad off after the last key (default: 0.5)
+"""
+import glob, os, select, struct, sys, time
+
+KEYBOARD_NAME = os.environ.get("PALM_GUARD_KEYBOARD", "Apple MTP keyboard")
+TRACKPAD_NAME = os.environ.get("PALM_GUARD_TRACKPAD", "Apple MTP multi-touch")
+HOLD = float(os.environ.get("PALM_GUARD_HOLD", "0.5"))
+
+EV_KEY = 1
+# Ctrl, Shift, Alt, Meta (L/R), Compose, Caps Lock, Fn
+MODIFIERS = {29, 97, 42, 54, 56, 100, 125, 126, 127, 58, 464}
+EVENT = struct.Struct("llHHi")  # struct input_event on 64-bit Linux
+
+
+def devices():
+    for path in sorted(glob.glob("/sys/class/input/event*/device/name")):
+        with open(path) as f:
+            yield f.read().strip(), path.rsplit("/", 2)[0]  # /sys/class/input/eventN
+
+
+def find(name):
+    for dev_name, sysdir in devices():
+        if dev_name == name:
+            return sysdir
+    sys.exit(f"palm-guard: device not found: {name!r} (see palm-guard --list)")
+
+
+def set_inhibited(path, on):
+    with open(path, "w") as f:
+        f.write("1" if on else "0")
+
+
+def main():
+    if "--list" in sys.argv:
+        for dev_name, sysdir in devices():
+            print(f"{os.path.basename(sysdir):10} {dev_name}")
+        return
+    inhibit = os.path.join(find(TRACKPAD_NAME), "device", "inhibited")
+    if "--release" in sys.argv:
+        set_inhibited(inhibit, False)
+        return
+
+    fd = os.open("/dev/input/" + os.path.basename(find(KEYBOARD_NAME)), os.O_RDONLY)
+    inhibited, until = False, 0.0
+    try:
+        set_inhibited(inhibit, False)
+        while True:
+            timeout = max(0.0, until - time.monotonic()) if inhibited else None
+            ready, _, _ = select.select([fd], [], [], timeout)
+            if ready:
+                data = os.read(fd, EVENT.size * 64)
+                for i in range(0, len(data) - EVENT.size + 1, EVENT.size):
+                    _, _, etype, code, value = EVENT.unpack_from(data, i)
+                    if etype != EV_KEY or value != 1:
+                        continue
+                    if code in MODIFIERS:
+                        if inhibited:  # reaching for a modifier means "about to click"
+                            set_inhibited(inhibit, False)
+                            inhibited = False
+                        continue
+                    until = time.monotonic() + HOLD
+                    if not inhibited:
+                        set_inhibited(inhibit, True)
+                        inhibited = True
+            elif inhibited and time.monotonic() >= until:
+                set_inhibited(inhibit, False)
+                inhibited = False
+    except KeyboardInterrupt:
+        pass
+    finally:
+        set_inhibited(inhibit, False)
+
+
+if __name__ == "__main__":
+    main()
